@@ -1,0 +1,16 @@
+"app.name" = "MoveResize";
+"modifier.control" = "Control";
+"modifier.option" = "Option";
+"modifier.command" = "Command";
+"modifier.function" = "Fn";
+"action.move" = "Move";
+"action.resize" = "Resize";
+"anchor.top_left" = "Top Left";
+"anchor.top_right" = "Top Right";
+"anchor.bottom_left" = "Bottom Left";
+"anchor.bottom_right" = "Bottom Right";
+"shortcut.description" = "%@ + Drag = %@";
+"menu.move_modifier" = "Move Modifier";
+"menu.resize_modifier" = "Resize Modifier";
+"menu.open_accessibility_settings" = "Open Accessibility Settings";
+"menu.quit" = "Quit";

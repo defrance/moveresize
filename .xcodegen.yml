@@ -1,0 +1,6 @@
+# Configuration additionnelle pour XcodeGen : sortie du bundle à la racine
+configs:
+  Release:
+    CONFIGURATION_BUILD_DIR: "${PROJECT_DIR}"
+  Debug:
+    CONFIGURATION_BUILD_DIR: "${PROJECT_DIR}"

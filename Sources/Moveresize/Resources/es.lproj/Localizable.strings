@@ -1,0 +1,16 @@
+"app.name" = "MoveResize";
+"modifier.control" = "Control";
+"modifier.option" = "Opcion";
+"modifier.command" = "Comando";
+"modifier.function" = "Fn";
+"action.move" = "Mover";
+"action.resize" = "Redimensionar";
+"anchor.top_left" = "Arriba izquierda";
+"anchor.top_right" = "Arriba derecha";
+"anchor.bottom_left" = "Abajo izquierda";
+"anchor.bottom_right" = "Abajo derecha";
+"shortcut.description" = "%@ + Arrastrar = %@";
+"menu.move_modifier" = "Modificador de mover";
+"menu.resize_modifier" = "Modificador de redimensionar";
+"menu.open_accessibility_settings" = "Abrir ajustes de accesibilidad";
+"menu.quit" = "Salir";
