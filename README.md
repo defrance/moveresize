@@ -41,6 +41,7 @@
 
 ## Installation & Launch
 
+[Download dmg file to install the application](Moveresize.dmg)
 ```bash
 swift run
 ```
