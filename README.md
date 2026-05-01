@@ -1,5 +1,6 @@
 
 # Moveresize
+Instantly move and resize macOS windows with shortcuts — no more manual dragging
 [French version here](README.fr.md)
 
 
@@ -9,13 +10,20 @@
 			<img src="sample.png" alt="Aperçu de l'application" width="420"/>
 		</td>
 		<td style="vertical-align:top;">
+
+			<p>
+<b>What is Moveresize?</b>
+
+Moveresize lets you move and resize macOS windows fluidly using both your mouse and keyboard.
+
+Unlike snapping tools like Rectangle or Magnet, it gives you real-time, precise control over window positioning.
+
+Perfect for developers, designers, and power users who want speed and flexibility.
+			</p>
 			<p>
 				<img src="https://img.shields.io/badge/platform-macOS-blue"/>
 				<img src="https://img.shields.io/badge/language-swift-orange"/>
 				<img src="https://img.shields.io/badge/status-MVP-green"/>
-			</p>
-			<p>
-				macOS utility in Swift to move and resize a window with the mouse while holding a modifier key.
 			</p>
 			<!-- Table des matières -->
 			<ul>
