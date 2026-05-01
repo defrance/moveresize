@@ -1,8 +1,7 @@
 
 # Moveresize
-Instantly move and resize macOS windows with shortcuts — no more manual dragging
-[French version here](README.fr.md)
 
+[French version here](README.fr.md)
 
 <table style='border:0px'>
 	<tr>
