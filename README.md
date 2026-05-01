@@ -57,6 +57,8 @@ On first launch:
 - Use the keyboard + mouse shortcuts to move or resize windows.
 - Access preferences via the menu bar icon.
 
+## Version
+1.0.0 Initial Version 
 
 ## License & Support
 
