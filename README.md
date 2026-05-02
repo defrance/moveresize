@@ -1,8 +1,7 @@
 
 # Moveresize
-Instantly move and resize macOS windows with shortcuts — no more manual dragging
-[French version here](README.fr.md)
 
+[French version here](README.fr.md)
 
 <table style='border:0px'>
 	<tr>
@@ -10,8 +9,7 @@ Instantly move and resize macOS windows with shortcuts — no more manual draggi
 			<img src="sample.png" alt="Aperçu de l'application" width="420"/>
 		</td>
 		<td style="vertical-align:top;">
-
-			<p>
+<p>
 <b>What is Moveresize?</b>
 
 Moveresize lets you move and resize macOS windows fluidly using both your mouse and keyboard.
