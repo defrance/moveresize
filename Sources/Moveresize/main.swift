@@ -812,7 +812,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var resizeShortcutItem: NSMenuItem?
     private var moveModifierMenu: NSMenu?
     private var resizeModifierMenu: NSMenu?
-    private var readmeWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -959,107 +958,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openReadme() {
-        // If window already exists, just bring it to front
-        if let window = readmeWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        if let url = readmeURLForCurrentLanguage() {
-            do {
-                let content = try String(contentsOf: url, encoding: .utf8)
-                showReadmePreview(title: L10n.text("menu.open_readme"), content: content)
-            } catch {
-                NSSound.beep()
-            }
-        } else {
-            NSSound.beep()
-        }
-    }
-
-    private func showReadmePreview(title: String, content: String) {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-            styleMask: [.titled, .closable, .resizable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-
-        window.title = title
-        window.isReleasedWhenClosed = false
-
-        // Create a scroll view with text view
-        let scrollView = NSScrollView(frame: window.contentView!.bounds)
-        scrollView.autoresizingMask = [.width, .height]
-
-        let textView = NSTextView(frame: scrollView.bounds)
-        textView.string = content
-        textView.isEditable = false
-        textView.isSelectable = true
-        textView.autoresizingMask = [.width, .height]
-        textView.font = NSFont.userFixedPitchFont(ofSize: 12)
-
-        scrollView.documentView = textView
-        window.contentView = scrollView
-
-        // Center window on screen
-        window.center()
-
-        window.makeKeyAndOrderFront(nil)
-        self.readmeWindow = window
-    }
-
-    private func readmeURLForCurrentLanguage() -> URL? {
-        let preferredBaseName = LanguageResolver.selectedLanguage.readmeBaseName
-        let fallbackBaseName = "README"
-
-        let namesToTry: [String]
-        if preferredBaseName == fallbackBaseName {
-            namesToTry = [preferredBaseName]
-        } else {
-            namesToTry = [preferredBaseName, fallbackBaseName]
-        }
-
-        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        if let found = findFirstReadmeURL(inParentChainFrom: currentDirectoryURL, fileBaseNames: namesToTry, maxDepth: 8) {
-            return found
-        }
-
-        // Also search relative to the app bundle location for packaged distributions.
-        let appDirectoryURL = Bundle.main.bundleURL.deletingLastPathComponent()
-        if let found = findFirstReadmeURL(inParentChainFrom: appDirectoryURL, fileBaseNames: namesToTry, maxDepth: 6) {
-            return found
-        }
-
-        // Final fallback: open online README.
-        if preferredBaseName == "README.fr" {
-            return URL(string: "https://github.com/charlene/moveresize/blob/main/README.fr.md")
-        }
-
-        return URL(string: "https://github.com/charlene/moveresize/blob/main/README.md")
-    }
-
-    private func findFirstReadmeURL(inParentChainFrom startDirectory: URL, fileBaseNames: [String], maxDepth: Int) -> URL? {
-        var currentDirectory = startDirectory
-        let fileManager = FileManager.default
-
-        for _ in 0...maxDepth {
-            for baseName in fileBaseNames {
-                let candidate = currentDirectory.appendingPathComponent("\(baseName).md")
-                if fileManager.fileExists(atPath: candidate.path) {
-                    return candidate
-                }
-            }
-
-            let parent = currentDirectory.deletingLastPathComponent()
-            if parent.path == currentDirectory.path {
-                break
-            }
-
-            currentDirectory = parent
-        }
-
-        return nil
+        let url = URL(string: "https://github.com/defrance/moveresize")!
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func quit() {
