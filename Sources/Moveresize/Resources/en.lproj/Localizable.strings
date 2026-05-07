@@ -12,5 +12,6 @@
 "shortcut.description" = "%@ + Drag = %@";
 "menu.move_modifier" = "Move Modifier";
 "menu.resize_modifier" = "Resize Modifier";
+"menu.open_readme" = "Documentation";
 "menu.open_accessibility_settings" = "Open Accessibility Settings";
 "menu.quit" = "Quit";

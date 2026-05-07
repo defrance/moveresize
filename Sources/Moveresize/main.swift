@@ -13,13 +13,120 @@ enum AppResources {
     }
 }
 
+enum AppLanguage: String, CaseIterable {
+    case en
+    case fr
+    case es
+
+    static let fallback: AppLanguage = .en
+
+    static func from(identifier: String?) -> AppLanguage? {
+        guard let identifier, !identifier.isEmpty else {
+            return nil
+        }
+
+        let languageCode = Locale(identifier: identifier).language.languageCode?.identifier
+            ?? String(identifier.prefix(2)).lowercased()
+
+        return AppLanguage(rawValue: languageCode)
+    }
+
+    var locale: Locale {
+        Locale(identifier: rawValue)
+    }
+
+    var readmeBaseName: String {
+        switch self {
+        case .fr:
+            return "README.fr"
+        case .en, .es:
+            return "README"
+        }
+    }
+}
+
+enum LanguageResolver {
+    static let selectedLanguage: AppLanguage = resolve()
+
+    private static func resolve() -> AppLanguage {
+        // Highest priority: launch arguments
+        if let fromArgs = languageFromLaunchArguments() {
+            return fromArgs
+        }
+
+        // Then optional environment override
+        if let fromEnvironment = AppLanguage.from(identifier: ProcessInfo.processInfo.environment["MOVERESIZE_LANG"]) {
+            return fromEnvironment
+        }
+
+        // Finally, follow the system language order
+        for preferred in Locale.preferredLanguages {
+            if let language = AppLanguage.from(identifier: preferred) {
+                return language
+            }
+        }
+
+        return AppLanguage.fallback
+    }
+
+    private static func languageFromLaunchArguments() -> AppLanguage? {
+        let arguments = Array(CommandLine.arguments.dropFirst())
+
+        for (index, argument) in arguments.enumerated() {
+            if argument == "--lang" || argument == "--language" || argument == "-l" {
+                guard arguments.indices.contains(index + 1) else {
+                    continue
+                }
+
+                if let language = AppLanguage.from(identifier: arguments[index + 1]) {
+                    return language
+                }
+            }
+
+            if argument.hasPrefix("--lang=") {
+                let value = String(argument.dropFirst("--lang=".count))
+                if let language = AppLanguage.from(identifier: value) {
+                    return language
+                }
+            }
+
+            if argument.hasPrefix("--language=") {
+                let value = String(argument.dropFirst("--language=".count))
+                if let language = AppLanguage.from(identifier: value) {
+                    return language
+                }
+            }
+        }
+
+        return nil
+    }
+}
+
 enum L10n {
+    private static let resolvedLanguage = LanguageResolver.selectedLanguage
+
+    private static let localizedBundle: Bundle = {
+        guard
+            let lprojPath = AppResources.bundle.path(forResource: resolvedLanguage.rawValue, ofType: "lproj"),
+            let bundle = Bundle(path: lprojPath)
+        else {
+            return AppResources.bundle
+        }
+
+        return bundle
+    }()
+
     static func text(_ key: String) -> String {
-        NSLocalizedString(key, bundle: AppResources.bundle, comment: "")
+        let translated = localizedBundle.localizedString(forKey: key, value: nil, table: nil)
+        if translated != key {
+            return translated
+        }
+
+        return AppResources.bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
-        String(format: text(key), locale: Locale.current, arguments: arguments)
+        String(format: text(key), locale: resolvedLanguage.locale, arguments: arguments)
     }
 }
 
@@ -28,16 +135,19 @@ enum InteractionMode {
     case resize
 }
 
+enum ConstraintMode {
+    case none
+    case horizontal
+    case vertical
+}
+
 enum ModifierKey: String, CaseIterable {
-    case control
     case option
     case command
     case function
 
     var displayName: String {
         switch self {
-        case .control:
-            return L10n.text("modifier.control")
         case .option:
             return L10n.text("modifier.option")
         case .command:
@@ -49,8 +159,6 @@ enum ModifierKey: String, CaseIterable {
 
     var eventFlag: CGEventFlags {
         switch self {
-        case .control:
-            return .maskControl
         case .option:
             return .maskAlternate
         case .command:
@@ -380,6 +488,7 @@ final class CoordinateSpace {
 
 struct DragState {
     let mode: InteractionMode
+    let constraint: ConstraintMode
     let window: AXUIElement
     let initialMouse: CGPoint
     let initialFrame: WindowFrame
@@ -503,6 +612,7 @@ final class WindowInteractionManager {
             return Unmanaged.passUnretained(event)
         }
 
+        let constraint = constraintMode(for: flags)
         let mouseLocation = event.location
         guard
             let window = windowController.windowElement(at: mouseLocation),
@@ -512,8 +622,8 @@ final class WindowInteractionManager {
             return Unmanaged.passUnretained(event)
         }
 
-        dragState = DragState(mode: mode, window: window, initialMouse: mouseLocation, initialFrame: frame)
-        log("mouseDown mode=\(mode.label) point=\(describe(point: mouseLocation)) frame=\(describe(frame: frame))")
+        dragState = DragState(mode: mode, constraint: constraint, window: window, initialMouse: mouseLocation, initialFrame: frame)
+        log("mouseDown mode=\(mode.label) constraint=\(constraint.label) point=\(describe(point: mouseLocation)) frame=\(describe(frame: frame))")
         return nil
     }
 
@@ -526,9 +636,19 @@ final class WindowInteractionManager {
         }
 
         let currentMouse = event.location
-        let deltaX = currentMouse.x - state.initialMouse.x
+        var deltaX = currentMouse.x - state.initialMouse.x
         // CGEvent uses top-left origin (Y down), window frames use NSScreen origin (Y up) — invert Y.
-        let deltaY = -(currentMouse.y - state.initialMouse.y)
+        var deltaY = -(currentMouse.y - state.initialMouse.y)
+
+        // Apply constraints
+        switch state.constraint {
+        case .horizontal:
+            deltaY = 0
+        case .vertical:
+            deltaX = 0
+        case .none:
+            break
+        }
 
         switch state.mode {
         case .move:
@@ -567,6 +687,19 @@ final class WindowInteractionManager {
         }
 
         return nil
+    }
+
+    private func constraintMode(for flags: CGEventFlags) -> ConstraintMode {
+        let hasShift = flags.contains(.maskShift)
+        let hasControl = flags.contains(.maskControl)
+
+        if hasShift && !hasControl {
+            return .horizontal
+        } else if hasControl && !hasShift {
+            return .vertical
+        }
+
+        return .none
     }
 
     private func log(_ message: String) {
@@ -657,6 +790,19 @@ private extension InteractionMode {
     }
 }
 
+private extension ConstraintMode {
+    var label: String {
+        switch self {
+        case .none:
+            return "none"
+        case .horizontal:
+            return "horizontal"
+        case .vertical:
+            return "vertical"
+        }
+    }
+}
+
 extension ShortcutAction: CaseIterable {}
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -666,6 +812,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var resizeShortcutItem: NSMenuItem?
     private var moveModifierMenu: NSMenu?
     private var resizeModifierMenu: NSMenu?
+    private var readmeWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -710,6 +857,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(.separator())
+
+        let readmeItem = NSMenuItem(title: L10n.text("menu.open_readme"), action: #selector(openReadme), keyEquivalent: "")
+        readmeItem.target = self
+        menu.addItem(readmeItem)
 
         let accessibilityItem = NSMenuItem(title: L10n.text("menu.open_accessibility_settings"), action: #selector(openAccessibilitySettings), keyEquivalent: "")
         accessibilityItem.target = self
@@ -805,6 +956,110 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         NSWorkspace.shared.open(url)
+    }
+
+    @objc private func openReadme() {
+        // If window already exists, just bring it to front
+        if let window = readmeWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        if let url = readmeURLForCurrentLanguage() {
+            do {
+                let content = try String(contentsOf: url, encoding: .utf8)
+                showReadmePreview(title: L10n.text("menu.open_readme"), content: content)
+            } catch {
+                NSSound.beep()
+            }
+        } else {
+            NSSound.beep()
+        }
+    }
+
+    private func showReadmePreview(title: String, content: String) {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.title = title
+        window.isReleasedWhenClosed = false
+
+        // Create a scroll view with text view
+        let scrollView = NSScrollView(frame: window.contentView!.bounds)
+        scrollView.autoresizingMask = [.width, .height]
+
+        let textView = NSTextView(frame: scrollView.bounds)
+        textView.string = content
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.autoresizingMask = [.width, .height]
+        textView.font = NSFont.userFixedPitchFont(ofSize: 12)
+
+        scrollView.documentView = textView
+        window.contentView = scrollView
+
+        // Center window on screen
+        window.center()
+
+        window.makeKeyAndOrderFront(nil)
+        self.readmeWindow = window
+    }
+
+    private func readmeURLForCurrentLanguage() -> URL? {
+        let preferredBaseName = LanguageResolver.selectedLanguage.readmeBaseName
+        let fallbackBaseName = "README"
+
+        let namesToTry: [String]
+        if preferredBaseName == fallbackBaseName {
+            namesToTry = [preferredBaseName]
+        } else {
+            namesToTry = [preferredBaseName, fallbackBaseName]
+        }
+
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        if let found = findFirstReadmeURL(inParentChainFrom: currentDirectoryURL, fileBaseNames: namesToTry, maxDepth: 8) {
+            return found
+        }
+
+        // Also search relative to the app bundle location for packaged distributions.
+        let appDirectoryURL = Bundle.main.bundleURL.deletingLastPathComponent()
+        if let found = findFirstReadmeURL(inParentChainFrom: appDirectoryURL, fileBaseNames: namesToTry, maxDepth: 6) {
+            return found
+        }
+
+        // Final fallback: open online README.
+        if preferredBaseName == "README.fr" {
+            return URL(string: "https://github.com/charlene/moveresize/blob/main/README.fr.md")
+        }
+
+        return URL(string: "https://github.com/charlene/moveresize/blob/main/README.md")
+    }
+
+    private func findFirstReadmeURL(inParentChainFrom startDirectory: URL, fileBaseNames: [String], maxDepth: Int) -> URL? {
+        var currentDirectory = startDirectory
+        let fileManager = FileManager.default
+
+        for _ in 0...maxDepth {
+            for baseName in fileBaseNames {
+                let candidate = currentDirectory.appendingPathComponent("\(baseName).md")
+                if fileManager.fileExists(atPath: candidate.path) {
+                    return candidate
+                }
+            }
+
+            let parent = currentDirectory.deletingLastPathComponent()
+            if parent.path == currentDirectory.path {
+                break
+            }
+
+            currentDirectory = parent
+        }
+
+        return nil
     }
 
     @objc private func quit() {

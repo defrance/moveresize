@@ -12,5 +12,6 @@
 "shortcut.description" = "%@ + Glisser = %@";
 "menu.move_modifier" = "Modificateur de deplacement";
 "menu.resize_modifier" = "Modificateur de redimensionnement";
+"menu.open_readme" = "Documentation";
 "menu.open_accessibility_settings" = "Ouvrir les reglages d'accessibilite";
 "menu.quit" = "Quitter";

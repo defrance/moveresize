@@ -1,4 +1,3 @@
-
 # Moveresize
 
 [French version here](README.fr.md)
@@ -39,9 +38,13 @@ Perfect for developers, designers, and power users who want speed and flexibilit
 
 - `Option` + left click + drag: move the window under the cursor.
 - `Command` + left click + drag: resize the window under the cursor.
-- Menu to choose the modifier for `Move` and `Resize` (`Control`, `Option`, `Command`, `Fn`).
+- Hold `Shift` while dragging to constrain movement/resize horizontally.
+- Hold `Control` while dragging to constrain movement/resize vertically.
+- Menu to choose the modifier for `Move` and `Resize` (`Option`, `Command`, `Fn`).
 - Choose the resize anchor: `Top Left`, `Top Right`, `Bottom Left`, `Bottom Right`.
 - Menu interface follows system language (English, French, Spanish, fallback to English).
+- Language is auto-detected from macOS preferred languages.
+- Launch parameter to force language: `--lang` / `--language` (`en`, `fr`, `es`).
 - Requests Accessibility permission at launch.
 
 
@@ -50,6 +53,13 @@ Perfect for developers, designers, and power users who want speed and flexibilit
 [Download dmg file to install the application](Moveresize.dmg)
 ```bash
 swift run
+```
+
+To force a specific language at launch:
+```bash
+swift run moveresize --lang fr
+# or
+swift run moveresize --language en
 ```
 
 On first launch:
@@ -61,7 +71,9 @@ On first launch:
 ## Usage
 
 - Use the keyboard + mouse shortcuts to move or resize windows.
+- During drag, use `Shift` for horizontal lock and `Control` for vertical lock.
 - Access preferences via the menu bar icon.
+- If needed, launch with `--lang en|fr|es` to override automatic language detection.
 
 ## Version
 1.0.0 Initial Version 
